@@ -5,7 +5,6 @@ DatabaseManager::DatabaseManager() {
         db = QSqlDatabase::addDatabase("QSQLITE");
         db.setDatabaseName("./messanger_users.db");
         if (!db.open()) {
-            qDebug() << "Failed to open database" << db.lastError().text();
             return;
         }
 
@@ -21,7 +20,6 @@ DatabaseManager::~DatabaseManager() {
 
 bool DatabaseManager::openDatabase() {
     if (!db.open()) {
-        qDebug() << "Failed to open database:" << db.lastError().text();
         return false;
     }
     return true;
@@ -35,7 +33,6 @@ bool DatabaseManager::initializeDatabase() {
                     "Login TEXT UNIQUE NOT NULL, "
                     "Password TEXT NOT NULL, "
                     "Salt TEXT NOT NULL);")) {
-        qDebug() << "Failed to create table Users:" << query.lastError().text();
         return false;
     }
 
@@ -46,7 +43,6 @@ bool DatabaseManager::initializeDatabase() {
                     "UNIQUE (IdName1, IdName2), "
                     "FOREIGN KEY (IdName1) REFERENCES Users(Id) ON DELETE CASCADE, "
                     "FOREIGN KEY (IdName2) REFERENCES Users(Id) ON DELETE CASCADE);")) {
-        qDebug() << "Failed to create table Chats:" << query.lastError().text();
         return false;
     }
 
@@ -59,16 +55,13 @@ bool DatabaseManager::initializeDatabase() {
                     "Status TEXT DEFAULT 'sent', "
                     "FOREIGN KEY (ChatId) REFERENCES Chats(Id) ON DELETE CASCADE, "
                     "FOREIGN KEY (SenderId) REFERENCES Users(Id) ON DELETE CASCADE);")) {
-        qDebug() << "Failed to create table Messages:" << query.lastError().text();
         return false;
     }
 
     if (!query.exec("CREATE INDEX IF NOT EXISTS idx_chat_messages ON Messages (ChatId, Timestamp);")) {
-        qDebug() << "Failed to create index idx_chat_messages:" << query.lastError().text();
         return false;
     }
 
-    qDebug() << "Database initialized successfully";
     return true;
 }
 
@@ -120,7 +113,6 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
     if (query.exec() && query.next()) {
         userId = query.value(0).toInt();
     } else {
-        qDebug() << "User not found in database:" << login;
         return chatsArray;
     }
 
@@ -128,7 +120,6 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
                   "FROM Chats WHERE IdName1 = :userId OR IdName2 = :userId");
     query.bindValue(":userId", userId);
     if (!query.exec()) {
-        qDebug() << "Failed to retrieve chats for user:" << query.lastError().text();
         return chatsArray;
     }
 
@@ -143,7 +134,6 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
         if (userQuery.exec() && userQuery.next()) {
             otherUserName = userQuery.value(0).toString();
         } else {
-            qDebug() << "Failed to retrieve username for userId:" << otherUserId;
             continue;
         }
 
@@ -163,14 +153,12 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
                 messagesArray.append(messageObj);
             }
         } else {
-            qDebug() << "Failed to retrieve messages for chatId:" << chatId;
             continue;
         }
 
         QJsonObject chatObj;
         chatObj["otherUser"] = otherUserName;
         chatObj["messages"] = messagesArray;
-        qDebug() << "ИМЯ " << otherUserName;
         if(clients.key(otherUserName, nullptr)){
             chatObj["online"] = "TRUE";
         } else {
@@ -185,7 +173,6 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
 void DatabaseManager::addMessage(const QString &from, const QString &to, const QString &message)
 {
     if (from.isEmpty() || to.isEmpty() || message.isEmpty()) {
-        qDebug() << "Invalid chat message: empty sender, receiver, or message.";
         return;
     }
 
@@ -197,7 +184,6 @@ void DatabaseManager::addMessage(const QString &from, const QString &to, const Q
     if (query.exec() && query.next()) {
         fromId = query.value(0).toInt();
     } else {
-        qDebug() << "Sender not found in database:" << from;
         return;
     }
 
@@ -205,7 +191,6 @@ void DatabaseManager::addMessage(const QString &from, const QString &to, const Q
     if (query.exec() && query.next()) {
         toId = query.value(0).toInt();
     } else {
-        qDebug() << "Receiver not found in database:" << to;
         return;
     }
 
@@ -223,9 +208,7 @@ void DatabaseManager::addMessage(const QString &from, const QString &to, const Q
         query.bindValue(":toId", qMax(fromId, toId));
         if (query.exec()) {
             chatId = query.lastInsertId().toInt();
-            qDebug() << "New chat created with ID:" << chatId;
         } else {
-            qDebug() << "Failed to create chat:" << query.lastError().text();
             return;
         }
     }
@@ -237,12 +220,8 @@ void DatabaseManager::addMessage(const QString &from, const QString &to, const Q
     query.bindValue(":message", message);
 
     if (!query.exec()) {
-        qDebug() << "Failed to insert message into database:" << query.lastError().text();
         return;
     }
-
-    qDebug() << "Message successfully added to database: chatId =" << chatId << ", senderId =" << fromId;
-
 }
 
 void DatabaseManager::markMessagesAsRead(const QString &from, const QString &to, const QString &msgId)
@@ -265,11 +244,6 @@ void DatabaseManager::markMessagesAsRead(const QString &from, const QString &to,
         query.bindValue(":msgId", msgId);
     }
 
-    if (!query.exec()) {
-        qDebug() << "Failed to mark messages as read:" << query.lastError().text();
-    } else {
-        qDebug() << "Messages marked as read between" << from << "and" << to;
-    }
 }
 
 QJsonArray DatabaseManager::getUsersByName(const QMap<QWebSocket*, QString> &clients, const QString &login, const QString &letters)
@@ -282,7 +256,6 @@ QJsonArray DatabaseManager::getUsersByName(const QMap<QWebSocket*, QString> &cli
 
 
     if (!query.exec()) {
-        qDebug() << "Some problem with get all clients" << query.lastError().text();
         return users;
     }
 
@@ -320,7 +293,6 @@ bool DatabaseManager::executeQuery(const QString &queryString, const QMap<QStrin
     }
 
     if (!query->exec()) {
-        qDebug() << "Query execution error:" << query->lastError().text();
         return false;
     }
     return true;
@@ -343,7 +315,6 @@ bool DatabaseManager::registrateNewClients(const QString &login, const QString &
 {
 
     if (login.isEmpty() || password.isEmpty()) {
-        qDebug() << "Registration failed: login or password is empty.";
         return false;
     }
 
@@ -356,16 +327,12 @@ bool DatabaseManager::registrateNewClients(const QString &login, const QString &
     QMap<QString, QVariant> params = { {"login", login}, {"password", hash}, {"salt", salt} };
 
     if (!executeQuery(insertQuery, params, &query)) {
-        qDebug() << "Error adding user to database. Rolling back transaction.";
         db.rollback();
         return false;
     }
 
     if (!db.commit()) {
-        qDebug() << "Error registration transaction:" << db.lastError().text();
         return false;
     }
-
-    qDebug() << "User registered successfully";
     return true;
 }
