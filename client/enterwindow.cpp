@@ -33,7 +33,8 @@ void EnterWindow::slotOnSuccess()
 
 void EnterWindow::slotOnError()
 {
-    if(currentMode == LogIn){
+    if(currentMode == LogIn)
+    {
         ui->statusLabel->setText("Invalid login or password. Please try again.");
     } else {
         ui->statusLabel->setText("This login is already taken.");
@@ -42,14 +43,13 @@ void EnterWindow::slotOnError()
 
 void EnterWindow::on_pushButton_clicked()
 {
-
     ui->statusLabel->clear();
-    if (dialogWindow) {
+    if (dialogWindow) 
+    {
         delete dialogWindow;
     }
 
     dialogWindow = new Dialog(this);
-
 
     connect(dialogWindow, &Dialog::onSuccess, this, &EnterWindow::slotOnSuccess);
     connect(dialogWindow, &Dialog::onError, this, &EnterWindow::slotOnError);
@@ -57,7 +57,8 @@ void EnterWindow::on_pushButton_clicked()
 
     dialogWindow->set_login(ui->lineEdit->text(), ui->lineEdit_2->text());
 
-    if (currentMode == LogIn){
+    if (currentMode == LogIn)
+    {
         dialogWindow->socketConnect(SystemMessage::Login);
     } else {
         dialogWindow->socketConnect(SystemMessage::Registration);
@@ -74,7 +75,8 @@ void EnterWindow::on_pushButton_2_clicked()
 
 void EnterWindow::updateUI()
 {
-    if (currentMode == LogIn) {
+    if (currentMode == LogIn) 
+    {
         ui->titleLabel->setText("Welcome Back");
         ui->lineEdit->setPlaceholderText("Enter your login");
         ui->lineEdit_2->setPlaceholderText("Enter your password");
