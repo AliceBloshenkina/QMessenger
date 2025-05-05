@@ -10,9 +10,7 @@ Server::Server(QObject *parent)
         qDebug() << "Server started";
         connect(webSocketServer, &QWebSocketServer::newConnection, this, &Server::slotNewConnection);
 
-    } else {
-        qDebug() << "Failed to start server" << webSocketServer->errorString();
-    }
+    } 
 }
 
 void Server::slotNewConnection()
@@ -20,14 +18,11 @@ void Server::slotNewConnection()
 
     QWebSocket *socket = webSocketServer->nextPendingConnection();
     if(!socket){
-        qDebug() << "Failed to accepting incoming connection";
         return;
     }
 
     connect(socket, &QWebSocket::textMessageReceived, this, &Server::slotTextMessageReceived);
     connect(socket, &QWebSocket::disconnected, this, &Server::slotDisconnected);
-
-    qDebug() << "New WebSocket connection from:" << socket->peerAddress().toString() << "Port:" << socket->peerPort();
 
 }
 
@@ -35,15 +30,11 @@ void Server::slotTextMessageReceived(const QString &message)
 {
     QWebSocket *socket = qobject_cast<QWebSocket*>(sender());
     if (!socket){
-        qDebug() << "Faile to identify socket";
         return;
     }
 
-    qDebug() << "Message received from:" << socket->peerAddress().toString() << ":" << message;
-
     QJsonDocument docJson = QJsonDocument::fromJson(message.toUtf8());
     if(!docJson.isObject()){
-        qDebug() << "Invalod format message";
         return;
     }
 
@@ -66,15 +57,12 @@ void Server::slotTextMessageReceived(const QString &message)
         dbManager.markMessagesAsRead(jsonObj["from"].toString(), jsonObj["to"].toString());
     } else if (typeMessage == "ack") {
         dbManager.markMessagesAsRead(jsonObj["from"].toString(), jsonObj["to"].toString(), jsonObj["msg_id"].toString());
-    } else {
-        qDebug() << "Unknown message type.";
-    }
+    } 
 }
 
 void Server::handleLogin(QWebSocket* socket, const QJsonObject &jsonObj)
 {
     if (!socket || jsonObj["login"].toString().isEmpty() || jsonObj["password"].toString().isEmpty()) {
-        qDebug() << "Invalid login attempt: empty login or password.";
         return;
     }
 
@@ -92,7 +80,6 @@ void Server::handleLogin(QWebSocket* socket, const QJsonObject &jsonObj)
 void Server::handleRegistration(QWebSocket* socket, const QJsonObject &jsonObj)
 {
     if (!socket || jsonObj["login"].toString().isEmpty() || jsonObj["password"].toString().isEmpty()) {
-        qDebug() << "Invalid registration attempt: empty login or password.";
         return;
     }
 
@@ -115,9 +102,7 @@ void Server::handleChatMessage(QWebSocket *socket, const QJsonObject &jsonObj)
 
     if (recipientSocket) {
         sendMessageToClients(jsonObj, socket);
-    } else {
-        qDebug() << "User " << toLogin << "is offline. Message saved in db.";
-    }
+    } 
 }
 
 QString Server::checkOnlineStatus(const QString &login)
@@ -139,15 +124,9 @@ void Server::slotDisconnected()
         return;
 
     if (clients.contains(socket)) {
-        qDebug() << "Client disconnected:" << clients.value(socket);
-
         notifyAllClients(clients[socket], socket, "FALSE");
-
         clients.remove(socket);
-    } else {
-        qDebug() << "Unknown client disconnected.";
     }
-
     socket->deleteLater();
 }
 
@@ -208,14 +187,11 @@ void Server::sendMessageToClients(const QJsonObject &jsonIncoming, QWebSocket *s
         response["to"] = jsonIncoming["login"];
         response["clients"] = dbManager.getUsersByName(clients, jsonIncoming["login"].toString(), jsonIncoming["message"].toString());
     } else if (messageType == "get_online_status"){
-        qDebug() << "Отправил назад статут онлайн";
         response["type"] = "get_online_status";
         response["to"] = jsonIncoming["login"];
         response["online"] = jsonIncoming["online"];
         response["message"] = jsonIncoming["message"];
-    } else {
-        qDebug() << "Wrong type message";
-    }
+    } 
 
     QJsonDocument doc(response);
     socket->sendTextMessage(QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
@@ -234,13 +210,9 @@ void Server::notifyAllClients(const QString &newClientLogin, QWebSocket *socket,
 
     for (QWebSocket *clientSocket : clients.keys()) {
         if (clientSocket && clientSocket != socket) {
-            qDebug() << "Sending notification to client:" << clients[clientSocket];
             clientSocket->sendTextMessage(message);
-        } else {
-            qDebug() << "Skipping notification for socket:" << clients[clientSocket];
-        }
+        } 
     }
-        qDebug() << "Notification about" << newClientLogin << "with status" << status << "sent to all clients.";
 }
 
 
