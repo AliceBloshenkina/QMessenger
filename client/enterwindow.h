@@ -17,7 +17,6 @@ class EnterWindow : public QMainWindow
 {
     Q_OBJECT
 
-
 public:
     EnterWindow(QWidget *parent = nullptr);
     ~EnterWindow();
@@ -34,6 +33,7 @@ private:
     Ui::EnterWindow *ui;
     Dialog *dialogWindow;
     Mode currentMode;
+
     void updateUI();
 
 };
