@@ -29,13 +29,10 @@ void EnterWindow::slotOnSuccess()
     dialogWindow->setModal(true);
     hide();
     dialogWindow->show();
-    // show();
 }
 
 void EnterWindow::slotOnError()
 {
-    // сделать вывод на экран об ошибки
-    qDebug() << "Ошибка на экран";
     if(currentMode == LogIn){
         ui->statusLabel->setText("Invalid login or password. Please try again.");
     } else {
@@ -65,9 +62,6 @@ void EnterWindow::on_pushButton_clicked()
     } else {
         dialogWindow->socketConnect(SystemMessage::Registration);
     }
-
-    // dialogWindow->dumpObjectInfo();
-
 }
 
 
