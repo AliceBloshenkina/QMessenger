@@ -27,11 +27,9 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-# Устанавливаем путь для выходных бинарных файлов
 CONFIG += release
 DESTDIR = ../build-release
 
-# Устанавливаем путь для объектных файлов, MOC, RCC и других временных файлов
 OBJECTS_DIR = ../build-release/obj
 MOC_DIR = ../build-release/moc
 RCC_DIR = ../build-release/rcc
