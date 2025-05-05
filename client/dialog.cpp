@@ -74,7 +74,8 @@ void Dialog::handleClients(const QJsonArray &clients)
     ui->userListWidget->clear();
     ui->textBrowser->clear();
 
-    for (const QJsonValue &chatValue : history) {
+    for (const QJsonValue &chatValue : history)
+    {
         QJsonObject chatObj = chatValue.toObject();
         QJsonObject person;
         person["login"] = chatObj["otherUser"].toString();
@@ -90,7 +91,8 @@ void Dialog::handleClients(const QJsonArray &clients)
 
 void Dialog::handleRemoveClient(const QJsonObject &client)
 {
-    if (!client.isEmpty()) {
+    if (!client.isEmpty()) 
+    {
         QString login = client["login"].toString();
 
         if (userItemMap.contains(login)) {
@@ -111,11 +113,14 @@ void Dialog::handleRemoveClient(const QJsonObject &client)
 
 void Dialog::handleAddNewClient(const QJsonObject &newClient)
 {
-    if (!newClient.isEmpty()) {
+    if (!newClient.isEmpty()) 
+    {
         QString login = newClient["login"].toString();
         QString onlineStatus = newClient["online"].toString();
-        if (!login.isEmpty()) {
+        if (!login.isEmpty())
+        {
             if (userItemMap.contains(login)) {
+                
                 QListWidgetItem *item = userItemMap[login];
                 QString updatedText = login + " (" + (onlineStatus == "TRUE" ? "online" : "offline") + ")";
                 item->setText(updatedText);
@@ -141,13 +146,15 @@ void Dialog::set_login(QString login, QString password)
 void Dialog::slotTextMessageReceived(const QString &message)
 {
     QWebSocket *socket = qobject_cast<QWebSocket*>(sender());
-    if (!socket) {
+    if (!socket) 
+    {
         qDebug() << "Faile to identify socket";
         return;
     }
 
     QJsonDocument docJson = QJsonDocument::fromJson(message.toUtf8());
-    if(!docJson.isObject()){
+    if(!docJson.isObject())
+    {
         qDebug() << "Invalod format message";
         return;
     }
@@ -155,13 +162,14 @@ void Dialog::slotTextMessageReceived(const QString &message)
     QJsonObject jsonObj = docJson.object();
     QString typeMessage = jsonObj["type"].toString();
 
-    if (typeMessage == "login") {
+    if (typeMessage == "login") 
+    {
         handleLogin(jsonObj);
-    } else if (typeMessage == "registration"){
+    } else if (typeMessage == "registration") {
         handleRegistration(jsonObj);
     } else if (typeMessage == "chat") {
         handleChat(jsonObj);
-    } else if(typeMessage == "update_clients") {
+    } else if (typeMessage == "update_clients") {
         handleUpdateClients(jsonObj);
     } else if (typeMessage == "search_users"){
         onSearchUsers_dropdownAppend(jsonObj);
@@ -173,12 +181,10 @@ void Dialog::slotTextMessageReceived(const QString &message)
 
 }
 
-
-
-
 void Dialog::onUserSelected(QListWidgetItem *item)
 {
-    if (!item) {
+    if (!item) 
+    {
         qDebug() << "No item selected.";
         return;
     }
@@ -212,22 +218,26 @@ void Dialog::loadChatHistory(const QString &user)
 {
     ui->textBrowser->clear();
 
-    for (const QJsonValue &chatValue : history) {
+    for (const QJsonValue &chatValue : history)
+    {
         QJsonObject chatObj = chatValue.toObject();
         QString otherUser = chatObj["otherUser"].toString();
 
         qDebug() << "Checking chat for user:" << "against otherUser:" << otherUser;
 
-        if (otherUser == user) {
+        if (otherUser == user) 
+        {
             QJsonArray messages = chatObj["messages"].toArray();
-            for (const QJsonValue &messageValue : messages) {
+            for (const QJsonValue &messageValue : messages) 
+            {
                 QJsonObject messageObj = messageValue.toObject();
                 QString sender = messageObj["sender"].toString();
                 QString message = messageObj["message"].toString();
                 bool isRead = messageObj["is_read"].toBool();
 
                 QString formattedMessage = sender + ": " + message;
-                if (!isRead) {
+                if (!isRead)
+                {
                     formattedMessage += " (unread)";
                 }
                 ui->textBrowser->append(formattedMessage);
@@ -241,26 +251,25 @@ void Dialog::onSearchUsers_dropdownAppend(const QJsonObject &jsonObj)
 {
     QJsonArray users = jsonObj["clients"].toArray();
 
-    if (users.isEmpty() || ui->lineEdit_3->text().isEmpty()) {
+    if (users.isEmpty() || ui->lineEdit_3->text().isEmpty()) 
+    {
         if (userDropdown) userDropdown->hide();
         return;
     }
 
-    if (!userDropdown) {
+    if (!userDropdown) 
+    {
         userDropdown = new QListWidget(this);
         userDropdown->setWindowFlags(Qt::ToolTip);
         userDropdown->setAttribute(Qt::WA_DeleteOnClose);
         userDropdown->setFocusPolicy(Qt::NoFocus);
 
         connect(userDropdown, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
-
             ui->lineEdit_3->setText(item->text());
-
             QJsonObject request;
             request["from"] = login;
             qDebug() <<"text - " << ui->lineEdit_3->text();
             request["message"] = item->text();
-
             request["type"] = "get_online_status";
 
             QJsonDocument doc(request);
@@ -269,13 +278,13 @@ void Dialog::onSearchUsers_dropdownAppend(const QJsonObject &jsonObj)
             userDropdown->hide();
             userDropdown->clear();
             ui->lineEdit_3->clear();
-
         });
     } else {
         userDropdown->clear();
     }
 
-    for (const QJsonValue &userValue : users) {
+    for (const QJsonValue &userValue : users) 
+    {
         QString username = userValue.toObject()["login"].toString();
         userDropdown->addItem(username);
     }
@@ -303,13 +312,12 @@ void Dialog::markMessagesAsRead(const QString &client)
 
 void Dialog::handleLogin(const QJsonObject &jsonObj)
 {
-
-    if(jsonObj["status"] == "success"){
+    if(jsonObj["status"] == "success")
+    {
         ui->textBrowser->append(login + " successfully logged in.");
-
-        if (jsonObj.contains("history_messages")) {
+        if (jsonObj.contains("history_messages")) 
+        {
             history = jsonObj["history_messages"].toArray();
-
             handleClients(jsonObj["history_messages"].toArray());
         } else {
             qDebug() << "Key 'history_messages' not found or is not an array.";
@@ -324,7 +332,8 @@ void Dialog::handleLogin(const QJsonObject &jsonObj)
 
 void Dialog::handleRegistration(const QJsonObject &jsonObj)
 {
-    if(jsonObj["status"] == "success"){
+    if (jsonObj["status"] == "success")
+    {
         ui->textBrowser->append(login + " successfully registered.");
         showInitialState();
 
@@ -337,8 +346,10 @@ void Dialog::handleRegistration(const QJsonObject &jsonObj)
 
 void Dialog::handleChat(const QJsonObject &jsonObj)
 {
-    if (jsonObj["from"] == userItemMap.key(selectedUser)){
-        if(jsonObj["status"] == "success"){
+    if (jsonObj["from"] == userItemMap.key(selectedUser))
+    {
+        if (jsonObj["status"] == "success")
+        {
             ui->textBrowser->append(jsonObj["from"].toString() + ": " + jsonObj["message"].toString());
         } else if (jsonObj["status"] == "fail") {
             ui->textBrowser->append("Message delivery failed: " + jsonObj["message"].toString());
@@ -364,10 +375,12 @@ void Dialog::handleChat(const QJsonObject &jsonObj)
 void Dialog::handleUpdateClients(const QJsonObject &jsonObj)
 {
 
-    if(userItemMap.contains(jsonObj["login"].toString())){
-        if(jsonObj["online"] == "TRUE"){
+    if(userItemMap.contains(jsonObj["login"].toString()))
+    {
+        if(jsonObj["online"] == "TRUE")
+        {
             handleAddNewClient(jsonObj);
-        } else if (jsonObj["online"] == "FALSE"){
+        } else if (jsonObj["online"] == "FALSE") {
             handleRemoveClient(jsonObj);
         }
     }
@@ -395,8 +408,9 @@ void Dialog::slotDisconnected()
     const int maxRetries = 5;
     const int baseDelay = 2000;
 
-    if (retryCount < maxRetries) {
-        int delay = baseDelay * (1 << retryCount); /
+    if (retryCount < maxRetries) 
+    {
+        int delay = baseDelay * (1 << retryCount); 
         QTimer::singleShot(delay, this, [this]() {
             qDebug() << "Attempting to reconnect...";
             socket->open(QUrl("ws://127.0.0.1:1111"));
@@ -418,9 +432,7 @@ void Dialog::showInitialState()
 {
     ui->lineEdit->hide();
     ui->pushButton->hide();
-
     ui->textBrowser->setGeometry(140, 60, 350, 410);
-
     ui->textBrowser->clear();
     ui->textBrowser->setAlignment(Qt::AlignCenter);
     ui->textBrowser->append("Добро пожаловать! Выберите пользователя для начала чата.");
