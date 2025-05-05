@@ -24,6 +24,7 @@ class Dialog : public QDialog
 public:
     explicit Dialog(QWidget *parent = nullptr);
     ~Dialog();
+
     void set_login(QString login, QString password);
     bool socketConnect(SystemMessage typeMessage);
 
@@ -40,7 +41,6 @@ private slots:
     void onUserSelected(QListWidgetItem *item);
     void onSearchUsers_textEdited();
 
-
 private:
     Ui::Dialog *ui;
     QString login;
@@ -51,6 +51,7 @@ private:
     QListWidget *userDropdown = nullptr;
     QJsonArray history;
     QHash<QString, QListWidgetItem*> userItemMap;
+
     void SendToServer(QString str, QString toLogin);
     void handleClients(const QJsonArray &clients);
     void handleAddNewClient(const QJsonObject &newClient);
@@ -63,7 +64,6 @@ private:
     void handleChat(const QJsonObject &jsonObj);
     void handleUpdateClients(const QJsonObject &jsonObj);
     void getOnlineStatus(const QJsonObject &jsonObj);
-
     void showInitialState();
     void restoreChatState();
 
