@@ -1,38 +1,47 @@
 #include "databasemanager.h"
 
-DatabaseManager::DatabaseManager() {
-    if (!db.isValid()) {
+DatabaseManager::DatabaseManager() 
+{
+    if (!db.isValid()) 
+    {
         db = QSqlDatabase::addDatabase("QSQLITE");
         db.setDatabaseName("./messanger_users.db");
-        if (!db.open()) {
+        if (!db.open()) 
+        {
             return;
         }
 
-        if(!initializeDatabase()){
+        if (!initializeDatabase())
+        {
             return;
         }
     }
 }
 
-DatabaseManager::~DatabaseManager() {
+DatabaseManager::~DatabaseManager() 
+{
     db.close();
 }
 
-bool DatabaseManager::openDatabase() {
-    if (!db.open()) {
+bool DatabaseManager::openDatabase() 
+{
+    if (!db.open()) 
+    {
         return false;
     }
     return true;
 }
 
-bool DatabaseManager::initializeDatabase() {
+bool DatabaseManager::initializeDatabase() 
+{
     QSqlQuery query(db);
 
     if (!query.exec("CREATE TABLE IF NOT EXISTS Users ("
                     "Id INTEGER PRIMARY KEY AUTOINCREMENT, "
                     "Login TEXT UNIQUE NOT NULL, "
                     "Password TEXT NOT NULL, "
-                    "Salt TEXT NOT NULL);")) {
+                    "Salt TEXT NOT NULL);")) 
+    {
         return false;
     }
 
@@ -42,7 +51,8 @@ bool DatabaseManager::initializeDatabase() {
                     "IdName2 INTEGER NOT NULL, "
                     "UNIQUE (IdName1, IdName2), "
                     "FOREIGN KEY (IdName1) REFERENCES Users(Id) ON DELETE CASCADE, "
-                    "FOREIGN KEY (IdName2) REFERENCES Users(Id) ON DELETE CASCADE);")) {
+                    "FOREIGN KEY (IdName2) REFERENCES Users(Id) ON DELETE CASCADE);")) 
+    {
         return false;
     }
 
@@ -54,7 +64,8 @@ bool DatabaseManager::initializeDatabase() {
                     "Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
                     "Status TEXT DEFAULT 'sent', "
                     "FOREIGN KEY (ChatId) REFERENCES Chats(Id) ON DELETE CASCADE, "
-                    "FOREIGN KEY (SenderId) REFERENCES Users(Id) ON DELETE CASCADE);")) {
+                    "FOREIGN KEY (SenderId) REFERENCES Users(Id) ON DELETE CASCADE);")) 
+    {
         return false;
     }
 
@@ -65,17 +76,20 @@ bool DatabaseManager::initializeDatabase() {
     return true;
 }
 
-bool DatabaseManager::userExists(const QString &login) {
+bool DatabaseManager::userExists(const QString &login) 
+{
     QSqlQuery query(db);
     query.prepare("SELECT COUNT(*) FROM Users WHERE Login = :login");
     query.bindValue(":login", login);
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         return false;
     }
     return query.value(0).toInt() > 0;
 }
 
-bool DatabaseManager::addUser(const QString &login, const QString &password, const QString &salt) {
+bool DatabaseManager::addUser(const QString &login, const QString &password, const QString &salt) 
+{
     QSqlQuery query(db);
     query.prepare("INSERT INTO Users (Login, Password, Salt) VALUES (:login, :password, :salt)");
     query.bindValue(":login", login);
@@ -84,18 +98,19 @@ bool DatabaseManager::addUser(const QString &login, const QString &password, con
     return query.exec();
 }
 
-bool DatabaseManager::checkUserPassword(const QString &login, const QString &password) {
+bool DatabaseManager::checkUserPassword(const QString &login, const QString &password) 
+{
     QSqlQuery query(db);
     query.prepare("SELECT Password, Salt FROM Users WHERE Login = :login");
     query.bindValue(":login", login);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         return false;
     }
 
     QString dbHash = query.value(0).toString();
     QString dbSalt = query.value(1).toString();
-
     QByteArray saltedPassword = password.toUtf8() + dbSalt.toUtf8();
     QByteArray hash = QCryptographicHash::hash(saltedPassword, QCryptographicHash::Sha256);
 
@@ -110,7 +125,8 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
     QSqlQuery query(db);
     query.prepare("SELECT Id FROM Users WHERE Login = :login");
     query.bindValue(":login", login);
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         userId = query.value(0).toInt();
     } else {
         return chatsArray;
@@ -119,11 +135,13 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
     query.prepare("SELECT Id, CASE WHEN IdName1 = :userId THEN IdName2 ELSE IdName1 END AS OtherUserId "
                   "FROM Chats WHERE IdName1 = :userId OR IdName2 = :userId");
     query.bindValue(":userId", userId);
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         return chatsArray;
     }
 
-    while (query.next()) {
+    while (query.next()) 
+    {
         int chatId = query.value("Id").toInt();
         int otherUserId = query.value("OtherUserId").toInt();
 
@@ -131,7 +149,8 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
         userQuery.prepare("SELECT Login FROM Users WHERE Id = :id");
         userQuery.bindValue(":id", otherUserId);
         QString otherUserName;
-        if (userQuery.exec() && userQuery.next()) {
+        if (userQuery.exec() && userQuery.next()) 
+        {
             otherUserName = userQuery.value(0).toString();
         } else {
             continue;
@@ -142,8 +161,10 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
         messagesQuery.bindValue(":chatId", chatId);
 
         QJsonArray messagesArray;
-        if (messagesQuery.exec()) {
-            while (messagesQuery.next()) {
+        if (messagesQuery.exec()) 
+        {
+            while (messagesQuery.next()) 
+            {
                 QJsonObject messageObj;
                 int senderId = messagesQuery.value("SenderId").toInt();
                 messageObj["sender"] = (senderId == userId) ? login : otherUserName;
@@ -159,7 +180,8 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
         QJsonObject chatObj;
         chatObj["otherUser"] = otherUserName;
         chatObj["messages"] = messagesArray;
-        if(clients.key(otherUserName, nullptr)){
+        if (clients.key(otherUserName, nullptr))
+        {
             chatObj["online"] = "TRUE";
         } else {
             chatObj["online"] = "FALSE";
@@ -172,7 +194,8 @@ QJsonArray DatabaseManager::getMessages(const QString &login, const QMap<QWebSoc
 
 void DatabaseManager::addMessage(const QString &from, const QString &to, const QString &message)
 {
-    if (from.isEmpty() || to.isEmpty() || message.isEmpty()) {
+    if (from.isEmpty() || to.isEmpty() || message.isEmpty()) 
+    {
         return;
     }
 
@@ -181,14 +204,16 @@ void DatabaseManager::addMessage(const QString &from, const QString &to, const Q
     int fromId = -1, toId = -1;
     query.prepare("SELECT Id FROM Users WHERE Login = :login");
     query.bindValue(":login", from);
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         fromId = query.value(0).toInt();
     } else {
         return;
     }
 
     query.bindValue(":login", to);
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         toId = query.value(0).toInt();
     } else {
         return;
@@ -200,7 +225,8 @@ void DatabaseManager::addMessage(const QString &from, const QString &to, const Q
     query.bindValue(":fromId", fromId);
     query.bindValue(":toId", toId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         chatId = query.value(0).toInt();
     } else {
         query.prepare("INSERT INTO Chats (IdName1, IdName2) VALUES (:fromId, :toId)");
@@ -219,7 +245,8 @@ void DatabaseManager::addMessage(const QString &from, const QString &to, const Q
     query.bindValue(":senderId", fromId);
     query.bindValue(":message", message);
 
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         return;
     }
 }
@@ -228,7 +255,8 @@ void DatabaseManager::markMessagesAsRead(const QString &from, const QString &to,
 {
     QSqlQuery query(db);
 
-    if(msgId.isEmpty()){
+    if(msgId.isEmpty())
+    {
         query.prepare("UPDATE Messages SET IsRead = 1 WHERE ChatId IN "
                       "(SELECT Id FROM Chats WHERE (IdName1 = (SELECT Id FROM Users WHERE Login = :from) "
                       "AND IdName2 = (SELECT Id FROM Users WHERE Login = :to)) "
@@ -239,7 +267,6 @@ void DatabaseManager::markMessagesAsRead(const QString &from, const QString &to,
         query.bindValue(":from", from);
         query.bindValue(":to", to);
     } else {
-
         query.prepare("UPDATE Messages SET Status = 'read' WHERE Id = :msgId");
         query.bindValue(":msgId", msgId);
     }
@@ -254,18 +281,21 @@ QJsonArray DatabaseManager::getUsersByName(const QMap<QWebSocket*, QString> &cli
     query.prepare("SELECT Login FROM Users WHERE Login LIKE :letters");
     query.bindValue(":letters", letters + "%");
 
-
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         return users;
     }
 
-    while(query.next()){
+    while(query.next())
+    {
         QString currentLogin = query.value("Login").toString();
-        if(currentLogin != login){
+        if (currentLogin != login)
+        {
             QJsonObject user;
             QString currentLogin = query.value("Login").toString();
             user["login"] = currentLogin;
-            if(clients.key(currentLogin, nullptr)){
+            if (clients.key(currentLogin, nullptr))
+            {
                 user["online"] = "TRUE";
             } else {
                 user["online"] = "FALSE";
@@ -279,20 +309,22 @@ QJsonArray DatabaseManager::getUsersByName(const QMap<QWebSocket*, QString> &cli
 
 bool DatabaseManager::executeQuery(const QString &queryString, const QMap<QString, QVariant> &params, QSqlQuery *query)
 {
-
-    if (!query) {
+    if (!query) 
+    {
         qDebug() << "Query pointer is null";
         return false;
     }
     query->prepare(queryString);
 
 
-    for (auto it = params.constBegin(); it != params.constEnd(); ++it) {
+    for (auto it = params.constBegin(); it != params.constEnd(); ++it) 
+    {
         QString placeholder = ":" + it.key();
         query->bindValue(placeholder, it.value());
     }
 
-    if (!query->exec()) {
+    if (!query->exec()) 
+    {
         return false;
     }
     return true;
@@ -314,7 +346,8 @@ QString DatabaseManager::hashPassword(const QString &password, const QString &sa
 bool DatabaseManager::registrateNewClients(const QString &login, const QString &password)
 {
 
-    if (login.isEmpty() || password.isEmpty()) {
+    if (login.isEmpty() || password.isEmpty()) 
+    {
         return false;
     }
 
@@ -326,12 +359,14 @@ bool DatabaseManager::registrateNewClients(const QString &login, const QString &
     QString insertQuery = "INSERT INTO Users (Login, Password, Salt) VALUES (:login, :password, :salt)";
     QMap<QString, QVariant> params = { {"login", login}, {"password", hash}, {"salt", salt} };
 
-    if (!executeQuery(insertQuery, params, &query)) {
+    if (!executeQuery(insertQuery, params, &query)) 
+    {
         db.rollback();
         return false;
     }
 
-    if (!db.commit()) {
+    if (!db.commit()) 
+    {
         return false;
     }
     return true;
